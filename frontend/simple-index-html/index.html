@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Frontend</title>
+</head>
+<body>
+    <h1>Simple Frontend</h1>
+    <button id="fetch-button">Fetch Message from Backend</button>
+    <p id="message-display"></p>
+
+    <script>
+        const button = document.getElementById('fetch-button');
+        const display = document.getElementById('message-display');
+
+        button.addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://localhost:3000/api/message');
+                const data = await response.json();
+                display.textContent = data.message;
+            } catch (error) {
+                display.textContent = 'Error fetching message: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
