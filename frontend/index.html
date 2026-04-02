@@ -4,7 +4,26 @@
     <title>Simple App</title>
 </head>
 <body>
-    <h1>Welcome to DevOps App 🚀</h1>
-    <p>This is frontend page</p>
+
+<h1>Welcome to DevOps App 🚀</h1>
+<p>This is frontend page</p>
+
+<button onclick="getData()">Get Backend Data</button>
+
+<p id="result"></p>
+
+<script>
+function getData() {
+    fetch('/api')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('result').innerText = data;
+        })
+        .catch(err => {
+            console.error(err);
+        });
+}
+</script>
+
 </body>
 </html>
