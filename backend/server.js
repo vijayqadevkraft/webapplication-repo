@@ -2,7 +2,7 @@ const http = require('http');
 
 http.createServer((req, res) => {
 
-    if (req.url === '/api') {
+    if (req.url.startsWith('/api')) {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end("Hello from Backend 🚀");
     } else {
