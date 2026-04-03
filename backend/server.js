@@ -1,15 +1,17 @@
-const http = require('http');
+const express = require('express');
+const path = require('path');
 
-http.createServer((req, res) => {
+const app = express();
+const PORT = 3000;
 
-    if (req.url.startsWith('/api')) {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end("Hello from Backend 🚀");
-    } else {
-        res.writeHead(404);
-        res.end("Not Found");
-    }
+// Serve frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
 
-}).listen(3000);
+// API
+app.get('/api', (req, res) => {
+    res.json({ message: "✅ Backend Connected Successfully!" });
+});
 
-console.log("Server running on port 3000");
+app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
