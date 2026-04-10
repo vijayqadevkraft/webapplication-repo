@@ -4,20 +4,20 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 
-// Serve frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+// ✅ Serve frontend (FIXED PATH)
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // API
 app.get('/api', (req, res) => {
     res.json({ message: "✅ Backend Connected Successfully!" });
 });
 
-// ✅ Health check (IMPORTANT)
+// ✅ Health check
 app.get('/health', (req, res) => {
     res.status(200).json({ status: "OK" });
 });
 
-.listen(PORT, '0.0.0.0', () => {
+// ✅ FIXED LISTEN
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
-    
-
+});
