@@ -24,6 +24,7 @@ pipeline {
                 sh '''
                 sudo rm -rf $PROJECT_DIR
                 sudo mkdir -p $PROJECT_DIR
+                sudo chown -R jenkins:jenkins $PROJECT_DIR
                 '''
             }
         }
@@ -31,7 +32,7 @@ pipeline {
         stage('Copy Code to Target') {
             steps {
                 sh '''
-                cp -r simpleweb/* $PROJECT_DIR/
+                cp simpleweb/index.html $PROJECT_DIR/
                 '''
             }
         }
@@ -51,11 +52,20 @@ pipeline {
                 '''
             }
         }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                sleep 2
+                curl -I http://localhost | grep "200 OK"
+                '''
+            }
+        }
     }
 
     post {
         success {
-            echo "✅ Deployment Successful!"
+            echo "✅ Deployment Successful & Verified!"
         }
         failure {
             echo "❌ Deployment Failed!"
