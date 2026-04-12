@@ -13,32 +13,33 @@ pipeline {
         stage('Setup Permissions') {
             steps {
                 sh '''
-                    sudo mkdir -p $BASE_DIR
-                    sudo chown -R jenkins:jenkins $BASE_DIR
+                sudo mkdir -p $BASE_DIR
+                sudo chown -R jenkins:jenkins $BASE_DIR
                 '''
             }
         }
 
-        stage('Clean Old Code') {
+        stage('Clean Old Deployment') {
             steps {
                 sh '''
-                    rm -rf $PROJECT_DIR
+                sudo rm -rf $PROJECT_DIR
+                sudo mkdir -p $PROJECT_DIR
                 '''
             }
         }
 
-        stage('Clone Code') {
+        stage('Copy Code to Target') {
             steps {
                 sh '''
-                    git clone https://github.com/vijayqadevkraft/webapplication-repo.git $PROJECT_DIR
+                cp -r simpleweb/* $PROJECT_DIR/
                 '''
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Nginx') {
             steps {
                 sh '''
-                    sudo cp $PROJECT_DIR/simpleweb/index.html $NGINX_DIR/
+                sudo cp $PROJECT_DIR/index.html $NGINX_DIR/
                 '''
             }
         }
@@ -46,9 +47,18 @@ pipeline {
         stage('Reload Nginx') {
             steps {
                 sh '''
-                    sudo systemctl reload nginx
+                sudo systemctl reload nginx
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment Successful!"
+        }
+        failure {
+            echo "❌ Deployment Failed!"
         }
     }
 }
