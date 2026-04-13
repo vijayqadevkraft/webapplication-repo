@@ -1,66 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webhook   </title>
+pipeline {
+    agent any
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f8;
-            text-align: center;
-            padding-top: 100px;
+    options {
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        PROJECT_NAME = "simpleweb_v2"
+        BASE_DIR     = "/opt/projects"
+        PROJECT_DIR  = "${BASE_DIR}/${PROJECT_NAME}"
+        NGINX_DIR    = "/var/www/html"
+        REPO_URL     = "https://github.com/vijayqadevkraft/webapplication-repo.git"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                echo "📥 Checking out code..."
+                dir("${PROJECT_DIR}") {
+                    git branch: 'main', url: "${REPO_URL}"
+                }
+            }
         }
 
-        h1 {
-            color: #2c3e50;
+        stage('Check simpleweb Changes') {
+            when {
+                changeset "simpleweb/**"
+            }
+            steps {
+                echo "✅ simpleweb changed → Continue pipeline"
+            }
         }
 
-        p {
-            color: #555;
-            font-size: 18px;
+        stage('Setup Permissions') {
+            steps {
+                sh '''
+                    sudo mkdir -p $BASE_DIR
+                    sudo chown -R jenkins:jenkins $BASE_DIR
+                '''
+            }
         }
 
-        .box {
-            background: white;
-            padding: 30px;
-            margin: auto;
-            width: 50%;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        stage('Validate File') {
+            steps {
+                sh '''
+                    ls $PROJECT_DIR/simpleweb
+
+                    if [ ! -f "$PROJECT_DIR/simpleweb/index.html" ]; then
+                        echo "❌ index.html not found!"
+                        exit 1
+                    fi
+                '''
+            }
         }
 
-        .btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        stage('Deploy to Nginx') {
+            steps {
+                sh '''
+                    sudo rm -rf $NGINX_DIR/*
+                    sudo cp -r $PROJECT_DIR/simpleweb/* $NGINX_DIR/
+                '''
+            }
         }
 
-        .btn:hover {
-            background: #2980b9;
+        stage('Reload Nginx') {
+            steps {
+                sh '''
+                    sudo systemctl reload nginx
+                '''
+            }
         }
-    </style>
-</head>
-<body>
 
-    <div class="box">
-        <h1>🚀 Welcome vijay   </h1>
-        <p>Deploy  </p>
-
-        <button class="btn" onclick="showMessage()">Click Me</button>
-        <p id="msg"></p>
-    </div>
-
-    <script>
-        function showMessage() {
-            document.getElementById("msg").innerText = "✅ Deployment Successful!";
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                    curl -I http://localhost
+                '''
+            }
         }
-    </script>
+    }
 
-</body>
-</html>
+    post {
+        success {
+            echo "🎉 Deployment Successful!"
+        }
+        failure {
+            echo "❌ Deployment Failed!"
+        }
+    }
+}
