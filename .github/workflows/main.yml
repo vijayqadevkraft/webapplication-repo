@@ -16,28 +16,35 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
           script: |
             echo "🚀 Starting deployment..."
 
             cd /home/ubuntu
 
-            # Clone if not exists
+            # Clone repo if not exists
             if [ ! -d "webapplication" ]; then
+              echo "📦 Cloning repository..."
               git clone https://github.com/vijayqadevkraft/webapplication.git
             fi
 
             cd webapplication
+
+            echo "🔄 Pulling latest code..."
             git pull origin main
 
+            # Go inside app folder
             cd app
 
             # =========================
-            # BACKEND
+            # BACKEND (Node.js)
             # =========================
-            echo "⚙️ Backend setup..."
+            echo "⚙️ Setting up backend..."
             cd backend
 
             npm install
+
+            echo "♻️ Restarting backend..."
             pm2 delete backend || true
             pm2 start server.js --name backend
 
@@ -49,9 +56,15 @@ jobs:
             echo "🎨 Deploying static frontend..."
             cd frontend
 
+            # Remove old files
             sudo rm -rf /var/www/html/*
+
+            # Copy new files
             sudo cp -r * /var/www/html/
 
             cd ..
 
-            echo "✅ Deployment completed 🎉"
+            echo "🌐 Restarting Nginx..."
+            sudo systemctl restart nginx
+
+            echo "✅ Deployment completed successfully 🎉"
