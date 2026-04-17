@@ -16,69 +16,58 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
           script: |
             echo "🚀 Starting deployment..."
 
-            # Go to home directory
             cd /home/ubuntu
 
             # Clone repo if not exists
             if [ ! -d "webapplication" ]; then
-              echo "📦 Cloning repository..."
               git clone https://github.com/vijayqadevkraft/webapplication.git
             fi
 
-            # Go inside project
             cd webapplication
 
             echo "🔄 Pulling latest code..."
             git pull origin main
 
+            # 👉 IMPORTANT: go inside app folder
+            cd app
+
             # =========================
-            # BACKEND SETUP
+            # BACKEND
             # =========================
             if [ -d "backend" ]; then
-              echo "⚙️ Setting up backend..."
+              echo "⚙️ Backend setup..."
               cd backend
 
               npm install
 
-              echo "♻️ Restarting backend with PM2..."
               pm2 delete backend || true
               pm2 start server.js --name backend
 
               cd ..
             else
-              echo "⚠️ Backend folder not found"
+              echo "❌ backend folder not found"
             fi
 
             # =========================
-            # FRONTEND SETUP
+            # FRONTEND
             # =========================
             if [ -d "frontend" ]; then
-              echo "🎨 Deploying frontend..."
+              echo "🎨 Frontend setup..."
               cd frontend
 
-              # If build required (React/Angular)
-              if [ -f "package.json" ]; then
-                npm install
-                npm run build || true
-              fi
+              npm install
+              npm run build || true
 
-              # Copy to Nginx
+              # Copy build to nginx
               sudo rm -rf /var/www/html/*
-              sudo cp -r * /var/www/html/
+              sudo cp -r build/* /var/www/html/
 
               cd ..
             else
-              echo "⚠️ Frontend folder not found"
+              echo "❌ frontend folder not found"
             fi
 
-            # =========================
-            # FINAL STATUS
-            # =========================
-            echo "🌐 Checking Nginx status..."
-            sudo systemctl status nginx
-
-            echo "✅ Deployment completed successfully 🎉"
+            echo "✅ Deployment completed 🎉"
