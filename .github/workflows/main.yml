@@ -1,4 +1,4 @@
-name: Full Auto Deploy
+name: Full Stack Auto Deploy
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2 (Full Automation)
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -18,48 +18,91 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
 
-            echo "🚀 Starting Full Automation..."
+            echo "🚀 Starting Deployment..."
+
+            REPO_DIR=/home/ubuntu/app_repo
+            APP_DIR=/home/ubuntu/apps/webapp
 
             # ========================
-            # SYSTEM SETUP (safe)
+            # CLONE OR PULL REPO
             # ========================
-            if ! command -v node >/dev/null 2>&1; then
-              echo "Installing Node.js..."
-              sudo apt update
-              sudo apt install -y curl git
-              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-              sudo apt install -y nodejs
-            fi
-
-            if ! command -v pm2 >/dev/null 2>&1; then
-              echo "Installing PM2..."
-              sudo npm install -g pm2
-            fi
-
-            # ========================
-            # APP SETUP
-            # ========================
-            mkdir -p /var/www/app
-            cd /var/www/app
-
-            if [ ! -d ".git" ]; then
+            if [ ! -d "$REPO_DIR/.git" ]; then
               echo "Cloning repo..."
-              git clone https://github.com/vijayqadevkraft/webapplication.git .
+              git clone https://github.com/vijayqadevkraft/webapplication-repo.git $REPO_DIR
             else
               echo "Pulling latest code..."
-              git pull origin main
+              cd $REPO_DIR && git pull origin main
             fi
 
             # ========================
-            # INSTALL DEPENDENCIES
+            # FRONTEND DEPLOY
             # ========================
+            echo "🌐 Deploying frontend..."
+            sudo mkdir -p /var/www/html/main
+            sudo rsync -av --delete $REPO_DIR/app/frontend/ /var/www/html/main/
+
+            # ========================
+            # BACKEND DEPLOY
+            # ========================
+            echo "⚙️ Deploying backend..."
+
+            mkdir -p $APP_DIR
+            rsync -av --delete $REPO_DIR/app/backend/ $APP_DIR/
+
+            cd $APP_DIR
             npm install
 
-            # ========================
-            # RUN APPLICATION
-            # ========================
-            pm2 restart webapp || pm2 start index.js --name webapp
-
+            # Use PM2 instead of nohup
+            pm2 restart webapp || pm2 start server.js --name webapp
             pm2 save
 
-            echo "✅ Deployment Completed"
+            # ========================
+            # SIMPLEWEB DEPLOY
+            # ========================
+            echo "📄 Deploying simpleweb..."
+
+            sudo mkdir -p /var/www/html/simpleweb
+            sudo rsync -av --delete $REPO_DIR/simpleweb/ /var/www/html/simpleweb/
+
+            # ========================
+            # NGINX CONFIG
+            # ========================
+            echo "⚙️ Configuring Nginx..."
+
+            sudo tee /etc/nginx/sites-available/default > /dev/null <<EOF
+server {
+    listen 80;
+
+    location / {
+        root /var/www/html/main;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+    }
+
+    location /simpleweb/ {
+        alias /var/www/html/simpleweb/;
+        index index.html;
+    }
+}
+EOF
+
+            sudo nginx -t
+            sudo systemctl reload nginx
+
+            # ========================
+            # HEALTH CHECK
+            # ========================
+            echo "🔍 Running health checks..."
+
+            curl -f http://localhost || exit 1
+            curl -f http://localhost/simpleweb/ || exit 1
+
+            echo "✅ Deployment Successful"
