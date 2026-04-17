@@ -1,1 +1,37 @@
+name: Server Setup
 
+on:
+  workflow_dispatch   # run manually
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Software on Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "Updating server..."
+            sudo apt update -y
+
+            echo "Installing Nginx..."
+            sudo apt install nginx -y
+
+            echo "Installing Git..."
+            sudo apt install git -y
+
+            echo "Installing Node.js..."
+            sudo apt install nodejs npm -y
+
+            echo "Installing PM2..."
+            sudo npm install -g pm2
+
+            echo "Starting services..."
+            sudo systemctl start nginx
+            sudo systemctl enable nginx
+
+            echo "All software installed successfully ✅"
