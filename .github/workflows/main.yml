@@ -1,4 +1,4 @@
-name: Full Stack Auto Deploy
+name: Deploy Application
 
 on:
   push:
@@ -10,99 +10,75 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Deploy to EC2 Server
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
           script: |
+            echo "🚀 Starting deployment..."
 
-            echo "🚀 Starting Deployment..."
+            # Go to home directory
+            cd /home/ubuntu
 
-            REPO_DIR=/home/ubuntu/app_repo
-            APP_DIR=/home/ubuntu/apps/webapp
-
-            # ========================
-            # CLONE OR PULL REPO
-            # ========================
-            if [ ! -d "$REPO_DIR/.git" ]; then
-              echo "Cloning repo..."
-              git clone https://github.com/vijayqadevkraft/webapplication-repo.git $REPO_DIR
-            else
-              echo "Pulling latest code..."
-              cd $REPO_DIR && git pull origin main
+            # Clone repo if not exists
+            if [ ! -d "webapplication" ]; then
+              echo "📦 Cloning repository..."
+              git clone https://github.com/vijayqadevkraft/webapplication.git
             fi
 
-            # ========================
-            # FRONTEND DEPLOY
-            # ========================
-            echo "🌐 Deploying frontend..."
-            sudo mkdir -p /var/www/html/main
-            sudo rsync -av --delete $REPO_DIR/app/frontend/ /var/www/html/main/
+            # Go inside project
+            cd webapplication
 
-            # ========================
-            # BACKEND DEPLOY
-            # ========================
-            echo "⚙️ Deploying backend..."
+            echo "🔄 Pulling latest code..."
+            git pull origin main
 
-            mkdir -p $APP_DIR
-            rsync -av --delete $REPO_DIR/app/backend/ $APP_DIR/
+            # =========================
+            # BACKEND SETUP
+            # =========================
+            if [ -d "backend" ]; then
+              echo "⚙️ Setting up backend..."
+              cd backend
 
-            cd $APP_DIR
-            npm install
+              npm install
 
-            # Use PM2 instead of nohup
-            pm2 restart webapp || pm2 start server.js --name webapp
-            pm2 save
+              echo "♻️ Restarting backend with PM2..."
+              pm2 delete backend || true
+              pm2 start server.js --name backend
 
-            # ========================
-            # SIMPLEWEB DEPLOY
-            # ========================
-            echo "📄 Deploying simpleweb..."
+              cd ..
+            else
+              echo "⚠️ Backend folder not found"
+            fi
 
-            sudo mkdir -p /var/www/html/simpleweb
-            sudo rsync -av --delete $REPO_DIR/simpleweb/ /var/www/html/simpleweb/
+            # =========================
+            # FRONTEND SETUP
+            # =========================
+            if [ -d "frontend" ]; then
+              echo "🎨 Deploying frontend..."
+              cd frontend
 
-            # ========================
-            # NGINX CONFIG
-            # ========================
-            echo "⚙️ Configuring Nginx..."
+              # If build required (React/Angular)
+              if [ -f "package.json" ]; then
+                npm install
+                npm run build || true
+              fi
 
-            sudo tee /etc/nginx/sites-available/default > /dev/null <<EOF
-server {
-    listen 80;
+              # Copy to Nginx
+              sudo rm -rf /var/www/html/*
+              sudo cp -r * /var/www/html/
 
-    location / {
-        root /var/www/html/main;
-        index index.html;
-        try_files \$uri \$uri/ /index.html;
-    }
+              cd ..
+            else
+              echo "⚠️ Frontend folder not found"
+            fi
 
-    location /api/ {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-    }
+            # =========================
+            # FINAL STATUS
+            # =========================
+            echo "🌐 Checking Nginx status..."
+            sudo systemctl status nginx
 
-    location /simpleweb/ {
-        alias /var/www/html/simpleweb/;
-        index index.html;
-    }
-}
-EOF
-
-            sudo nginx -t
-            sudo systemctl reload nginx
-
-            # ========================
-            # HEALTH CHECK
-            # ========================
-            echo "🔍 Running health checks..."
-
-            curl -f http://localhost || exit 1
-            curl -f http://localhost/simpleweb/ || exit 1
-
-            echo "✅ Deployment Successful"
+            echo "✅ Deployment completed successfully 🎉"
