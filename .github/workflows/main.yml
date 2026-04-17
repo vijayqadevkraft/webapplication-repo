@@ -21,53 +21,37 @@ jobs:
 
             cd /home/ubuntu
 
-            # Clone repo if not exists
+            # Clone if not exists
             if [ ! -d "webapplication" ]; then
               git clone https://github.com/vijayqadevkraft/webapplication.git
             fi
 
             cd webapplication
-
-            echo "🔄 Pulling latest code..."
             git pull origin main
 
-            # 👉 IMPORTANT: go inside app folder
             cd app
 
             # =========================
             # BACKEND
             # =========================
-            if [ -d "backend" ]; then
-              echo "⚙️ Backend setup..."
-              cd backend
+            echo "⚙️ Backend setup..."
+            cd backend
 
-              npm install
+            npm install
+            pm2 delete backend || true
+            pm2 start server.js --name backend
 
-              pm2 delete backend || true
-              pm2 start server.js --name backend
-
-              cd ..
-            else
-              echo "❌ backend folder not found"
-            fi
+            cd ..
 
             # =========================
-            # FRONTEND
+            # FRONTEND (STATIC)
             # =========================
-            if [ -d "frontend" ]; then
-              echo "🎨 Frontend setup..."
-              cd frontend
+            echo "🎨 Deploying static frontend..."
+            cd frontend
 
-              npm install
-              npm run build || true
+            sudo rm -rf /var/www/html/*
+            sudo cp -r * /var/www/html/
 
-              # Copy build to nginx
-              sudo rm -rf /var/www/html/*
-              sudo cp -r build/* /var/www/html/
-
-              cd ..
-            else
-              echo "❌ frontend folder not found"
-            fi
+            cd ..
 
             echo "✅ Deployment completed 🎉"
