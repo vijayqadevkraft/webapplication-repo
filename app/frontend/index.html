@@ -1,23 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>DevOps </title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DevOps App</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:linear-gradient(135deg,#667eea,#764ba2);
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.container{
+background:white;
+padding:50px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+text-align:center;
+width:450px;
+}
+
+h1{
+font-size:32px;
+margin-bottom:20px;
+color:#333;
+}
+
+p{
+font-size:18px;
+margin-top:20px;
+color:#444;
+min-height:30px;
+}
+
+button{
+background:#4f46e5;
+color:white;
+border:none;
+padding:15px 30px;
+font-size:18px;
+border-radius:10px;
+cursor:pointer;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.05);
+}
+
+.badge{
+display:inline-block;
+background:#e0e7ff;
+padding:8px 18px;
+border-radius:30px;
+margin-bottom:20px;
+font-weight:bold;
+}
+</style>
+
 </head>
 <body>
 
-<h1>🚀 Dev kumar
-</h1>
+<div class="container">
 
-<button onclick="getData()">Get Backend </button>
+<div class="badge">
+⚙️ DevOps Deployment Demo
+</div>
+
+<h1>🚀 Dev Kumar</h1>
+
+<button onclick="getData()">
+Get Backend
+</button>
 
 <p id="result"></p>
+
+</div>
 
 <script>
 function getData() {
     fetch('/api')
         .then(res => res.json())
         .then(data => {
-            document.getElementById('result').innerText = data.message;
+            document.getElementById('result').innerText = "✅ " + data.message;
         })
         .catch(() => {
             document.getElementById('result').innerText = "❌ Backend not reachable";
