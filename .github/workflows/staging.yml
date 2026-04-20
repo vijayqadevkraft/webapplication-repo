@@ -30,7 +30,8 @@ jobs:
 
             cd webapplication
 
-            git pull origin staging
+            git reset --hard
+            git pull --rebase origin staging
 
             cd app/backend
 
@@ -41,8 +42,8 @@ jobs:
 
             cd ../frontend
 
-            sudo rm -rf /var/www/html/*
-            sudo cp -r * /var/www/html/
+            sudo rm -rf /var/www/staging/*
+            sudo cp -r * /var/www/staging/
 
             sudo systemctl restart nginx
 
