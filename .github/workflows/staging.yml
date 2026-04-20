@@ -1,0 +1,49 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 Staging Server
+        uses: appleboy/ssh-action@v1.0.3
+
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+
+          script: |
+            echo "🚀 Starting STAGING deployment..."
+
+            cd /home/ubuntu
+
+            if [ ! -d "webapplication" ]; then
+              git clone https://github.com/vijayqadevkraft/webapplication.git
+            fi
+
+            cd webapplication
+
+            git pull origin staging
+
+            cd app/backend
+
+            npm install
+
+            pm2 delete backend-staging || true
+            pm2 start server.js --name backend-staging
+
+            cd ../frontend
+
+            sudo rm -rf /var/www/html/*
+            sudo cp -r * /var/www/html/
+
+            sudo systemctl restart nginx
+
+            echo "✅ STAGING deployment completed"
