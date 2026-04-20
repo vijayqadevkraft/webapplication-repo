@@ -30,7 +30,9 @@ jobs:
 
             cd webapplication
 
-            git pull origin main
+            # FIXED GIT COMMANDS
+            git fetch origin
+            git reset --hard origin/main
 
             cd app/backend
 
