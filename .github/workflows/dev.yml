@@ -30,19 +30,23 @@ jobs:
 
             cd webapplication
 
-            git pull origin dev
+            # FIXED GIT
+            git fetch origin
+            git reset --hard origin/dev
 
             cd app/backend
 
             npm install
 
+            # FIXED PM2 PROCESS
             pm2 delete backend-dev || true
             pm2 start server.js --name backend-dev
 
             cd ../frontend
 
-            sudo rm -rf /var/www/html/*
-            sudo cp -r * /var/www/html/
+            # DEV DEPLOY PATH
+            sudo rm -rf /var/www/dev/*
+            sudo cp -r * /var/www/dev/
 
             sudo systemctl restart nginx
 

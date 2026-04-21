@@ -36,13 +36,13 @@ jobs:
 
             npm install
 
-            pm2 delete backend-staging || true
-            pm2 start server.js --name backend-staging
+            pm2 delete backend || true
+            pm2 start server.js --name backend
 
             cd ../frontend
 
-            sudo rm -rf /var/www/html/*
-            sudo cp -r * /var/www/html/
+            sudo rm -rf /var/www/staging/*
+            sudo cp -r * /var/www/staging/
 
             sudo systemctl restart nginx
 
