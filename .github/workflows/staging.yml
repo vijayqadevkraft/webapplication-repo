@@ -37,8 +37,8 @@ jobs:
 
             npm install
 
-            pm2 delete backend-staging || true
-            pm2 start server.js --name backend-staging
+            pm2 delete backend || true
+            pm2 start server.js --name backend
 
             cd ../frontend
 
