@@ -30,7 +30,8 @@ jobs:
 
             cd webapplication
 
-            git pull origin staging
+            git reset --hard
+            git pull --rebase origin staging
 
             cd app/backend
 
